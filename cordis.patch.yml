@@ -1,0 +1,9 @@
+# dsh-account-balance 的 bundle 挂载声明。
+#
+# 通过 `dsh plugin --profile <name> add <本目录>` 安装时，启动器会读取
+# package.json 的 dsh.bundle.patch 并把下面这一行并入配置树。
+# 手工安装时也可以在 profile 的 cordis.patch.yml 里追加同样的 insert，
+# 然后确保本包位于 profile 的 node_modules 下。
+- insert:
+    - id: dsh-account-balance
+      name: 'dsh-account-balance'
