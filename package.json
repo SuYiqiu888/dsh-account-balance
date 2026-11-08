@@ -1,7 +1,7 @@
 {
   "name": "dsh-account-balance",
-  "version": "0.1.0",
-  "description": "在 DSH 侧边栏左下角显示账户余额：自定义 URL、请求头与结果 JSON 键。",
+  "version": "0.2.0",
+  "description": "DSH 侧边栏多 API 账户余额插件：支持自定义 HTTP、Header、JSON 解析和手动切换。", 
   "type": "module",
   "main": "lib/index.js",
   "icon": "icon.svg",

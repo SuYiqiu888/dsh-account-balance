@@ -1,103 +1,113 @@
 # dsh-account-balance
 
-在 DeepSeek Harness 左侧栏的**用户名上方**加一行「账户余额」，点击即可配置任意 HTTP 接口、请求头和结果 JSON 键。解析出的值直接显示在左下角，不需要打开新页面。
+DeepSeek Harness 侧边栏账户余额插件。它在左下角用户名上方提供一个账户余额入口，支持配置多个 API，并在不同 API 之间手动切换。
 
 ## 功能
 
-- **自定义请求**：URL、任意数量的 Header（名称 + 值），GET 请求由 Host 半侧发出，不受浏览器 CORS 限制。
-- **变量替换**：URL 与 Header 中可使用 `{{baseUrl}}` 和 `{{apiKey}}`，密钥不必写死在 URL 里。
-- **结果解析**：支持 `data.balance`、`data.items[0].total`、`$.data.balance` 与 `data["a.b"]` 这类路径。
-- **左下角展示**：解析结果直接显示在侧边栏底部、用户名上方；支持手动刷新与 5 分钟自动刷新。
-- **配置面板**：点击余额行打开，可启用/停用、编辑、恢复默认；面板使用原生 `dialog` 顶层面板，不会被侧边栏或聊天区遮挡。
-- **本地存储**：配置保存在 `$DSH_HOME/dsh-account-balance/config.json`（默认 `~/.dsh/dsh-account-balance/config.json`），不会上传到任何地方。
+- 自定义 HTTP GET 请求 URL
+- 自定义任意数量的 Header
+- 支持 `{{baseUrl}}`、`{{apiKey}}` 变量
+- 支持 JSON 路径：`data.balance`、`data.items[0].total`、`$.data.balance`、`data["a.b"]`
+- Host 半侧发起请求，避免浏览器 CORS 限制
+- 左下角显示解析结果，支持手动刷新和 5 分钟自动刷新
+- 支持多个 API 配置：新建、切换、删除
+- 每个 API 独立保存 URL、Base URL、API Key、Header 和 JSON 结果键
+- API 名称位于配置面板的 URL 上方，通过底部「保存并刷新」一并保存
+- 旧版单配置文件会自动迁移为第一个 API 配置
+- 配置保存在本机 `$DSH_HOME/dsh-account-balance/config.json`
+
+## 配置面板
+
+打开左下角「账户余额」后：
+
+1. 顶部下拉框选择现有 API 配置。
+2. 点击「新建」创建新的 API 配置。
+3. 点击「删除」删除当前 API 配置；至少保留一个配置。
+4. 在 URL 上方编辑「API 名称」。
+5. 编辑 URL、请求头、结果 JSON 键、Base URL 和 API Key。
+6. 点击底部「保存并刷新」，同时保存名称和接口配置。
+
+切换 API 后，插件会自动加载对应配置并刷新结果，不需要重复填写其他 API 的信息。
 
 ## 默认配置
 
-首次启动会生成以下配置：
+首次启动会生成：
 
 | 字段 | 默认值 |
 |---|---|
+| API 名称 | `默认 API` |
 | URL | `{{baseUrl}}/credits` |
-| Base URL | `这里填Url` |
+| Base URL | 空 |
 | Header | `Authorization: Bearer {{apiKey}}` |
 | 结果 JSON 键 | `data.total_usage` |
 | 自动刷新 | 5 分钟 |
 
-如果宿主的进程环境里存在 `DSH_BALANCE_API_KEY` 或 `CC_SWITCH_DSH_QIU`，首次创建配置时会把它的值填入 API Key 变量。已经存在的配置文件不会被覆盖。
+如果宿主进程环境存在 `DSH_BALANCE_API_KEY` 或 `CC_SWITCH_DSH_QIU`，首次创建默认配置时会自动填入 API Key。已有配置不会被覆盖。
 
 ## 安装
 
-### 通过插件管理器 / CLI
+### 本地安装
 
 ```sh
-dsh plugin --profile <profile> add <本目录的绝对路径>
+dsh plugin --profile <profile> add "E:\project\dsh-account-balance"
 ```
 
-启动器会读取 `package.json` 的 `dsh.bundle.patch` 并自动挂载。安装后如果页面没有自动出现入口，硬刷新一次（`Ctrl/Cmd + Shift + R`）。
+项目已经包含构建后的 `lib/index.js` 和 `lib/client.js`，不需要额外编译或打包。通过本地目录、Git 仓库或 npm 安装都可以直接使用。
 
 ### 手工挂载
 
-1. 把整个目录复制到 profile 的 `node_modules/dsh-account-balance`。
-2. 在 profile 的 `cordis.patch.yml` 末尾加入：
+1. 将项目目录放入 profile 的 `node_modules/dsh-account-balance`。
+2. 在 profile 的 `cordis.patch.yml` 中挂载：
 
-   ```yaml
-   - insert:
-       - id: dsh-account-balance
-         name: 'dsh-account-balance'
-   ```
+```yaml
+- insert:
+    - id: dsh-account-balance
+      name: 'dsh-account-balance'
+```
 
-3. 启用 HMR 时会自动重载；否则重启 DSH。
+3. 启用 HMR 时会自动重载，否则重启 DSH。
 
-## 使用
+## Host API
 
-1. 点击左下角「账户余额」行。
-2. 填写 URL（或保留 `{{baseUrl}}` 模板并填写 Base URL）。
-3. 在「请求头」中添加 `Authorization`，值可写 `Bearer {{apiKey}}`，或直接粘贴完整 Token。
-4. 在「API Key 变量」中填写密钥（如果 Header 使用了 `{{apiKey}}`）。
-5. 填写「结果 JSON 键」，例如 `data.balance`。
-6. 点击「保存并刷新」。之后每次打开页面会读取一次，并每 5 分钟自动刷新。
-
-如果接口返回非 2xx、不是 JSON、或路径不存在，左下角显示 `—`，面板中会给出可读的错误信息，不会伪造 0。
-
-## 接口
-
-Host 半侧注册在 `/dsh-account-balance/api`：
+插件注册 `/dsh-account-balance/api`：
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| `GET` | `/state` | 当前配置与最近一次结果 |
-| `POST` | `/config` | 保存配置并触发一次刷新 |
-| `POST` | `/refresh` | 立即刷新 |
-| `POST` | `/reset` | 恢复默认配置 |
+| `GET` | `/state` | 当前配置、配置列表和最近结果 |
+| `POST` | `/config` | 保存当前 API 配置并刷新 |
+| `POST` | `/profile` | 切换、新建、重命名或删除 API 配置 |
+| `POST` | `/refresh` | 立即刷新当前 API |
+| `POST` | `/reset` | 重置当前 API 配置 |
 
-所有 `POST` 都要求 `content-type: application/json`；跨站请求（`sec-fetch-site: cross-site` 或 Origin 与 Host 不一致）返回 403。这是本地路由，不提供额外的身份认证。
+`POST` 请求要求 `content-type: application/json`。跨站请求会被拒绝。
 
-## 开发
+## 开发与测试
 
 ```sh
 node test-host.mjs
 ```
 
-测试会启动一个本地 mock 接口，覆盖变量替换、路径解析、Header 注入、失败提示、禁用、重置、跨站拦截和内容类型校验。客户端是手写的 `window.__ModuleLoader__` bundle，无需构建步骤。
+测试覆盖变量替换、JSON 路径、Header 注入、错误处理、跨站拦截、配置切换、并发旧请求覆盖保护等行为。
 
-## 结构
+## 项目结构
 
-```
+```text
 dsh-account-balance/
-├─ lib/index.js        Host 半侧：配置存储、抓取、解析、HTTP 路由
-├─ lib/client.js       浏览器半侧：sidebar.footer.action 入口与配置面板
-├─ cordis.patch.yml    bundle 挂载声明
+├─ lib/index.js        Host 半侧：配置、HTTP 请求、解析、Profile API
+├─ lib/client.js       浏览器半侧：侧边栏入口和多 API 配置面板
+├─ cordis.patch.yml    Bundle 挂载声明
 ├─ icon.svg
 ├─ package.json
-└─ test-host.mjs
+├─ test-host.mjs
+└─ README.md
 ```
 
-## 已知限制
+## 限制
 
-- 目前只支持 `GET`。
-- 结果路径基于点号/方括号语法，不支持 JSONPath 过滤器或通配符。
-- 配置里的 Header 可能包含明文凭据，请注意本机文件权限；插件不会把配置发往 DSH 以外的服务，但会按你填写的 URL 发送请求。
-- 侧边栏折叠时只显示钱包图标，悬停可查看余额。
+- 当前只支持 GET 请求。
+- JSON 路径不支持过滤器和通配符。
+- Header 和 API Key 会以本地明文配置形式保存，请注意文件权限。
+- 侧边栏折叠时只显示钱包图标。
 
 ## License
 
